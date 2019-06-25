@@ -16,7 +16,7 @@ public:
     Node() = delete;
     Node(const std::list<const TreeUtils::Object3D*> &objects,
          const TreeUtils::BoundingBox &region):
-        m_objects(objects),
+        m_pendingObjects(objects),
         m_region(region)
     {
         m_childs.resize(octCount);
@@ -27,9 +27,11 @@ public:
         m_childs.resize(octCount);
     }
 
-    void BuildTree();
+    void UpdateTree();
+
 public:
     std::list<const TreeUtils::Object3D*> m_objects;
+    std::list<const TreeUtils::Object3D*> m_pendingObjects;
 
     TreeUtils::BoundingBox m_region = TreeUtils::BoundingBox();
 
@@ -39,6 +41,7 @@ public:
     static const short m_minSize = 1;
 
     char m_activeNodes = 0;
+    bool m_hasChildren = false;
 };
 
 class Octree
@@ -49,16 +52,12 @@ public:
     void AddObject(const TreeUtils::Object3D *object);
 
     void UpdateTree();
-private:
-    void BuildTree();
 
 private:
     Node *m_root = nullptr;
 
     bool m_treeReady = false;
     bool m_treeBuilt = false;
-
-    std::list<const TreeUtils::Object3D*> m_pendingObjects;
 };
 }
 

@@ -1,11 +1,17 @@
 #include "octree.h"
 
-namespace TreeLib {
-
-void Node::BuildTree()
+namespace TreeLib
 {
-    if (m_objects.size() < 2)
+
+void Node::UpdateTree()
+{
+    if (m_pendingObjects.size() <= 1 && m_objects.empty())
     {
+        if (!m_pendingObjects.empty())
+        {
+            m_objects = std::move(m_pendingObjects);
+        }
+
         return;
     }
 
@@ -13,6 +19,12 @@ void Node::BuildTree()
 
     if (dimensions.LengthSq() < 1)
     {
+        for (auto &object: m_pendingObjects)
+        {
+            m_objects.push_back(object);
+        }
+        m_pendingObjects.clear();
+
         return;
     }
 
@@ -38,7 +50,7 @@ void Node::BuildTree()
 
     std::list<const TreeUtils::Object3D*> delList;
 
-    for (auto &object : m_objects)
+    for (auto &object : m_pendingObjects)
     {
         if (object->m_aabb.m_lowerLeft != object->m_aabb.m_upperRight)
         {
@@ -56,17 +68,41 @@ void Node::BuildTree()
 
     for (auto &object: delList)
     {
-        m_objects.remove(object);
+        m_pendingObjects.remove(object);
     }
+
+    if (m_objects.empty())
+    {
+        m_objects = std::move(m_pendingObjects);
+    }
+    else
+    {
+        for (auto &object: m_pendingObjects)
+        {
+            m_objects.push_back(object);
+        }
+    }
+
+    m_pendingObjects.clear();
 
     for (unsigned long long i = 0; i < octCount; ++i)
     {
         if (!octObjects[i].empty())
         {
-            m_childs[i] = new Node(octObjects[i], octants[i]);
-            m_childs[i]->m_parent = this;
+            if (!m_childs[i])
+            {
+                m_childs[i] = new Node(octObjects[i], octants[i]);
+                m_childs[i]->m_parent = this;
+            }
+            else
+            {
+                m_childs[i]->m_pendingObjects = std::move(octObjects[i]);
+            }
+
+            m_hasChildren = true;
             m_activeNodes |= static_cast<char>(1 << i);
-            m_childs[i]->BuildTree();
+
+            m_childs[i]->UpdateTree();
         }
     }
 }
@@ -78,34 +114,15 @@ Octree::Octree(const TreeUtils::BoundingBox &boundingBox)
 
 void Octree::AddObject(const TreeUtils::Object3D *object)
 {
-    m_pendingObjects.push_back(object);
+    m_root->m_pendingObjects.push_back(object);
 }
 
 void Octree::UpdateTree()
 {
-    if (m_treeBuilt)
-    {
-
-    }
-    else
-    {
-        while (m_pendingObjects.size() > 0)
-        {
-            m_root->m_objects.push_front(m_pendingObjects.back());
-            m_pendingObjects.pop_back();
-        }
-
-        BuildTree();
-
-        m_treeBuilt = true;
-    }
+    m_root->UpdateTree();
+    m_treeBuilt = true;
 
     m_treeReady = true;
-}
-
-void Octree::BuildTree()
-{
-    m_root->BuildTree();
 }
 
 

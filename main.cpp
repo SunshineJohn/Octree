@@ -11,7 +11,7 @@ struct ObjHolder
         }
     }
 
-    std::list<TreeUtils::Object3D*> objects;
+    std::vector<TreeUtils::Object3D*> objects;
 };
 
 int main()
@@ -42,6 +42,16 @@ int main()
     {
         octree.AddObject(obj);
     }
+
+    octree.UpdateTree();
+
+    objHolder.objects.push_back(new TreeUtils::Object3D(TreeUtils::BoundingBox(TreeUtils::Vec3(-8, 6, -8),
+                                                                               TreeUtils::Vec3(-7, 7, -7))));
+    objHolder.objects.push_back(new TreeUtils::Object3D(TreeUtils::BoundingBox(TreeUtils::Vec3(-8, 6, 1),
+                                                                               TreeUtils::Vec3(-6, 8, 3))));
+
+    octree.AddObject(objHolder.objects[objHolder.objects.size() - 1]);
+    octree.AddObject(objHolder.objects[objHolder.objects.size() - 2]);
 
     octree.UpdateTree();
 
