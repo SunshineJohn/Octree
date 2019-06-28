@@ -29,6 +29,10 @@ public:
 
     void UpdateTree();
 
+    // Get all the objects which containing in or intersecting with frustum
+    std::list<const TreeUtils::Object3D*> GetInFrustum(const TreeUtils::Frustum &frustum) const;
+    // Get all the object from current node and subnodes;
+    std::list<const TreeUtils::Object3D*> GetSubtreeObjects() const;
 public:
     std::list<const TreeUtils::Object3D*> m_objects;
     std::list<const TreeUtils::Object3D*> m_pendingObjects;
@@ -52,6 +56,9 @@ public:
     void AddObject(const TreeUtils::Object3D *object);
 
     void UpdateTree();
+
+    // Get all the objects which containing in or intersecting with frustum
+    std::list<const TreeUtils::Object3D*> GetObjectsInside(const TreeUtils::Frustum &frustum);
 
 private:
     Node *m_root = nullptr;

@@ -2,7 +2,6 @@
 
 namespace TreeLib
 {
-
 void Node::UpdateTree()
 {
     if (m_pendingObjects.size() <= 1 && m_objects.empty())
@@ -107,6 +106,69 @@ void Node::UpdateTree()
     }
 }
 
+std::list<const TreeUtils::Object3D*> Node::GetInFrustum(const TreeUtils::Frustum &frustum) const
+{
+    std::list<const TreeUtils::Object3D*> objects;
+
+    TreeUtils::IntersectionResult res =
+            TreeUtils::FrustumAABBIntersect(frustum, m_region);
+
+    if (res == TreeUtils::IntersectionResult::Inside)
+    {
+        objects.insert(objects.end(), m_objects.begin(), m_objects.begin());
+
+        std::list<const TreeUtils::Object3D*> subObjects =
+                GetSubtreeObjects();
+        objects.insert(objects.end(), subObjects.begin(), subObjects.begin());
+    }
+    else if (res == TreeUtils::IntersectionResult::Intersect)
+    {
+        for (auto &object: m_objects)
+        {
+            if (TreeUtils::FrustumAABBIntersect(frustum, object->m_aabb) !=
+                    TreeUtils::IntersectionResult::Outside)
+            {
+                objects.push_back(object);
+            }
+
+            for (unsigned long long i = 0; i < octCount; ++i)
+            {
+                if(m_childs[i])
+                {
+                    std::list<const TreeUtils::Object3D*> subObjects =
+                            m_childs[i]->GetInFrustum(frustum);
+                    if (!subObjects.empty())
+                    {
+                        objects.insert(objects.end(), subObjects.begin(), subObjects.end());
+                    }
+                }
+            }
+        }
+    }
+
+    return objects;
+}
+
+std::list<const TreeUtils::Object3D*> Node::GetSubtreeObjects() const
+{
+    std::list<const TreeUtils::Object3D*> objects(m_objects);
+
+    for (unsigned long long i = 0; i < octCount; ++i)
+    {
+        if(m_childs[i])
+        {
+            std::list<const TreeUtils::Object3D*> subObjects =
+                    m_childs[i]->GetSubtreeObjects();
+            if (!subObjects.empty())
+            {
+                objects.insert(objects.end(), subObjects.begin(), subObjects.end());
+            }
+        }
+    }
+
+    return objects;
+}
+
 Octree::Octree(const TreeUtils::BoundingBox &boundingBox)
 {
     m_root = new Node(boundingBox);
@@ -125,5 +187,9 @@ void Octree::UpdateTree()
     m_treeReady = true;
 }
 
+std::list<const TreeUtils::Object3D*> Octree::GetObjectsInside(const TreeUtils::Frustum &frustum)
+{
+    return m_root->GetInFrustum(frustum);
+}
 
 }
