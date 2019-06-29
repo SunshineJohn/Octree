@@ -30,6 +30,7 @@ public:
     Vec3& operator/=(float val);
     friend Vec3 operator*(const Vec3 &v, float val);
     Vec3& operator *=(float val);
+    friend float operator*(const Vec3 &v1, const Vec3 &v2);
 
     friend bool operator==(const Vec3 &v1, const Vec3 &v2);
     friend bool operator!=(const Vec3 &v1, const Vec3 &v2);
@@ -49,6 +50,9 @@ public:
         };
     };
 };
+
+Vec3 Normal(const Vec3 &v);
+Vec3 Cross(const Vec3 &v1, const Vec3 &v2);
 
 class Vec4
 {
@@ -70,6 +74,7 @@ public:
     Vec4& operator/=(float val);
     friend Vec4 operator*(const Vec4 &v, float val);
     Vec4& operator *=(float val);
+    friend float operator*(const Vec4 &v1, const Vec4 &v2);
 
     friend bool operator==(const Vec4 &v1, const Vec4 &v2);
     friend bool operator!=(const Vec4 &v1, const Vec4 &v2);
@@ -93,9 +98,14 @@ public:
 
 class Mat4
 {
+public:
     Mat4();
     Mat4(const Mat4 &mat);
     Mat4(Mat4 &&mat);
+    Mat4(const Vec4 &row1,
+         const Vec4 &row2,
+         const Vec4 &row3,
+         const Vec4 &row4);
     const Mat4& operator=(const Mat4 &mat);
     const Mat4& operator=(Mat4 &&mat);
 
@@ -111,6 +121,9 @@ public:
         Vec4 vects[4];
     };
 };
+
+Mat4 ViewMatrix(const Vec3 &eye, const Vec3 &target, const Vec3 &up);
+Mat4 PerspectiveMatrix(float fovy, float aspect, float near, float far);
 
 class BoundingBox
 {
@@ -151,7 +164,6 @@ public:
     BoundingBox m_aabb = BoundingBox();
 };
 
-
 struct Plane
 {
     float a = 1.0f;
@@ -171,6 +183,7 @@ public:
 };
 
 IntersectionResult FrustumAABBIntersect(const Frustum &frustum, const BoundingBox &aabb);
+
 }
 
 #endif // UTILS_H

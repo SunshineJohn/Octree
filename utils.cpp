@@ -122,6 +122,11 @@ Vec3& Vec3::operator*=(float val)
     return *this;
 }
 
+float operator*(const Vec3 &v1, const Vec3 &v2)
+{
+    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+
 bool operator==(const Vec3 &v1, const Vec3 &v2)
 {
     static constexpr float tolerance = 1e-5f;
@@ -148,6 +153,20 @@ float Vec3::Length() const
 float Vec3::LengthSq() const
 {
     return x * x + y * y + z * z;
+}
+
+Vec3 Normal(const Vec3 &v)
+{
+    float invLength = 1.0f / v.Length();
+
+    return Vec3(v.x * invLength, v.y * invLength, v.z * invLength);
+}
+
+Vec3 Cross(const Vec3 &v1, const Vec3 &v2)
+{
+    return Vec3(v1.y * v2.z - v1.z * v2.y,
+                v1.z * v2.x - v1.x * v2.z,
+                v1.x * v2.y - v1.y * v2.x);
 }
 
 // Vec4's methods
@@ -290,6 +309,11 @@ Vec4& Vec4::operator*=(float val)
     return *this;
 }
 
+float operator*(const Vec4 &v1, const Vec4 &v2)
+{
+    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z + v1.w * v2.w;
+}
+
 bool operator==(const Vec4 &v1, const Vec4 &v2)
 {
     static constexpr float tolerance = 1e-5f;
@@ -342,6 +366,17 @@ Mat4::Mat4(Mat4 &&mat)
     vects[1] = std::move(mat.vects[1]);
     vects[2] = std::move(mat.vects[2]);
     vects[3] = std::move(mat.vects[3]);
+}
+
+Mat4::Mat4(const Vec4 &row1,
+           const Vec4 &row2,
+           const Vec4 &row3,
+           const Vec4 &row4)
+{
+    vects[0] = row1;
+    vects[1] = row2;
+    vects[2] = row3;
+    vects[3] = row4;
 }
 
 const Mat4& Mat4::operator=(const Mat4 &mat)
@@ -422,6 +457,31 @@ Vec4 Mat4::operator*(const Vec4 &vec)
     }
 
     return result;
+}
+
+Mat4 ViewMatrix(const Vec3 &eye, const Vec3 &target, const Vec3 &up)
+{
+    Vec3 zAxis = Normal(eye - target);
+    Vec3 xAxis = Normal(Cross(up, zAxis));
+    Vec3 yAxis = Cross(zAxis, xAxis);
+
+    return Mat4(Vec4(xAxis.x, yAxis.x, zAxis.x, 0.0f),
+                Vec4(xAxis.y, yAxis.y, zAxis.y, 0.0f),
+                Vec4(xAxis.z, yAxis.z, zAxis.z, 0.0f),
+                Vec4(-(xAxis * eye), -(yAxis * eye), -(zAxis * eye), 1.0f));
+}
+
+Mat4 PerspectiveMatrix(float fovy, float aspect, float near, float far)
+{
+    float top = std::tan(fovy * 0.5f * 3.1415f / 180.0f) * near;
+    float buttom = -top;
+    float right = aspect * top;
+    float left = -right;
+
+    return Mat4(Vec4(2.0f * near / (right - left), 0.0f , (right + left) / (right - left), 0.0f),
+                Vec4(0.0f, 2.0f * near / (top - buttom), (top + buttom) / (top - buttom), 0.0f),
+                Vec4(0.0f, 0.0f, (far + near) / (near - far), 2.0f * near * far / (near - far)),
+                Vec4(0.0f, 0.0f, -1.0f, 0.0f));
 }
 
 // AABB's methods
