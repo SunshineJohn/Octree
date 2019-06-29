@@ -3,6 +3,13 @@
 
 namespace TreeUtils
 {
+enum class IntersectionResult
+{
+    Inside,
+    Outside,
+    Intersect
+};
+
 class Vec3
 {
 public:
@@ -23,6 +30,7 @@ public:
     Vec3& operator/=(float val);
     friend Vec3 operator*(const Vec3 &v, float val);
     Vec3& operator *=(float val);
+    friend float operator*(const Vec3 &v1, const Vec3 &v2);
 
     friend bool operator==(const Vec3 &v1, const Vec3 &v2);
     friend bool operator!=(const Vec3 &v1, const Vec3 &v2);
@@ -42,6 +50,80 @@ public:
         };
     };
 };
+
+Vec3 Normal(const Vec3 &v);
+Vec3 Cross(const Vec3 &v1, const Vec3 &v2);
+
+class Vec4
+{
+public:
+    Vec4();
+    Vec4(float x_, float y_, float z_, float w_);
+    Vec4(const Vec4 &v);
+    Vec4(Vec4 &&v);
+
+    const Vec4& operator=(const Vec4 &v);
+    const Vec4& operator=(Vec4 &&v);
+    float operator[](unsigned int index);
+
+    friend Vec4 operator+(const Vec4 &v1, const Vec4 &v2);
+    Vec4& operator+=(const Vec4 &v);
+    friend Vec4 operator-(const Vec4 &v1, const Vec4 &v2);
+    Vec4& operator-=(const Vec4 &v);
+    friend Vec4 operator/(const Vec4 &v, float val);
+    Vec4& operator/=(float val);
+    friend Vec4 operator*(const Vec4 &v, float val);
+    Vec4& operator *=(float val);
+    friend float operator*(const Vec4 &v1, const Vec4 &v2);
+
+    friend bool operator==(const Vec4 &v1, const Vec4 &v2);
+    friend bool operator!=(const Vec4 &v1, const Vec4 &v2);
+
+    float Length() const;
+    float LengthSq() const;
+
+public:
+    union
+    {
+        float xyzw[4];
+        struct
+        {
+            float x;
+            float y;
+            float z;
+            float w;
+        };
+    };
+};
+
+class Mat4
+{
+public:
+    Mat4();
+    Mat4(const Mat4 &mat);
+    Mat4(Mat4 &&mat);
+    Mat4(const Vec4 &row1,
+         const Vec4 &row2,
+         const Vec4 &row3,
+         const Vec4 &row4);
+    const Mat4& operator=(const Mat4 &mat);
+    const Mat4& operator=(Mat4 &&mat);
+
+    Mat4 operator*(const Mat4 &mat);
+    const Mat4& operator*=(const Mat4 &mat);
+    Vec4 operator*(const Vec4 &vec);
+
+public:
+    union
+    {
+        float matr2d[4][4];
+        float matr1d[16];
+        Vec4 vects[4];
+    };
+};
+
+Mat4 ViewMatrix(const Vec3 &eye, const Vec3 &target, const Vec3 &up);
+Mat4 PerspectiveMatrix(float fovy, float aspect, float near, float far);
 
 class BoundingBox
 {
@@ -81,6 +163,27 @@ public:
 public:
     BoundingBox m_aabb = BoundingBox();
 };
+
+struct Plane
+{
+    float a = 1.0f;
+    float b = 0.0f;
+    float c = 0.0f;
+    float d = 0.0f;
+};
+
+class Frustum
+{
+    Frustum(){}
+    Frustum(const Mat4 &viewProj);
+
+    void GenerateFrustum(const Mat4 &viewProj);
+public:
+    Plane planes[6];
+};
+
+IntersectionResult FrustumAABBIntersect(const Frustum &frustum, const BoundingBox &aabb);
+
 }
 
 #endif // UTILS_H
